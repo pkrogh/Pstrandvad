@@ -21,7 +21,7 @@ export function ProjectDialog({ project, onClose }: { project: Project | null; o
           description: '',
           status: 'planning',
           health: 'on_track',
-          ownerId: state.members[7]?.id ?? state.members[0].id,
+          ownerId: state.currentUserId ?? state.members[0]?.id ?? '',
           memberIds: [],
           startDate: isoFromToday(0),
           dueDate: isoFromToday(60),

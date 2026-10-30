@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { FolderKanban, LayoutDashboard, Menu, RotateCcw, SquareKanban, Users, X } from 'lucide-react'
-import { CURRENT_USER_ID, useStore } from '../store/store'
+import { AlertTriangle, Cloud, FolderKanban, LayoutDashboard, Loader2, Menu, RefreshCw, RotateCcw, SquareKanban, Users, X } from 'lucide-react'
+import { useStore } from '../store/store'
+import { timeAgo } from '../lib/dates'
 import { Avatar, cx } from './ui'
 
 const nav = [
@@ -12,9 +13,10 @@ const nav = [
 ]
 
 export function Layout() {
-  const { state, dispatch } = useStore()
+  const { state, dispatch, sync, refresh } = useStore()
   const [open, setOpen] = useState(false)
-  const me = state.members.find((m) => m.id === CURRENT_USER_ID)
+  const me = state.members.find((m) => m.id === state.currentUserId)
+  const adoConfigured = __ADO_CONFIG__.enabled
   const activeProjects = state.projects.filter((p) => p.status === 'active')
 
   const sidebar = (
@@ -59,12 +61,31 @@ export function Layout() {
         ))}
       </div>
       <div className="mt-auto border-t border-slate-200 p-4">
-        <button
-          onClick={() => confirm('Reset all data back to the original mock data?') && dispatch({ type: 'reset' })}
-          className="mb-3 flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-        >
-          <RotateCcw size={14} /> Reset demo data
-        </button>
+        {adoConfigured && (
+          <div className="mb-2 rounded-lg bg-slate-50 px-2.5 py-2 text-xs">
+            <div className="flex items-center gap-1.5 font-medium text-slate-700">
+              <Cloud size={13} /> Azure DevOps · {__ADO_CONFIG__.project}
+            </div>
+            <div className="mt-0.5 text-slate-500">
+              {sync.status === 'loading' ? 'Syncing…' : sync.source === 'ado' ? `Synced ${sync.lastSync ? timeAgo(sync.lastSync.toISOString()) : ''}` : 'Sync failed — showing demo data'}
+            </div>
+            <button
+              onClick={refresh}
+              disabled={sync.status === 'loading'}
+              className="mt-1.5 flex items-center gap-1.5 font-medium text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
+            >
+              <RefreshCw size={12} className={sync.status === 'loading' ? 'animate-spin' : ''} /> Refresh
+            </button>
+          </div>
+        )}
+        {sync.source === 'mock' && (
+          <button
+            onClick={() => confirm('Reset all data back to the original mock data?') && dispatch({ type: 'reset' })}
+            className="mb-3 flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+          >
+            <RotateCcw size={14} /> Reset demo data
+          </button>
+        )}
         {me && (
           <div className="flex items-center gap-3 px-2">
             <Avatar member={me} />
@@ -100,7 +121,29 @@ export function Layout() {
           <span className="font-semibold">Strandvad PM</span>
         </header>
         <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          <Outlet />
+          {sync.status === 'error' && (
+            <div className="mb-6 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <p className="font-medium">Couldn’t load data from Azure DevOps — showing demo data instead.</p>
+                <p className="mt-0.5 text-red-700">{sync.error}</p>
+              </div>
+              <button onClick={refresh} className="shrink-0 font-medium underline">
+                Retry
+              </button>
+            </div>
+          )}
+          {sync.source === 'ado' && sync.status !== 'error' && (
+            <p className="mb-4 text-xs text-slate-400">Read-only sync: edits you make here are kept in this browser tab only and are not written back to Azure DevOps.</p>
+          )}
+          {sync.status === 'loading' && state.projects.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-32 text-slate-500">
+              <Loader2 size={28} className="animate-spin text-indigo-500" />
+              <p className="mt-3 text-sm">Loading epics and work items from Azure DevOps…</p>
+            </div>
+          ) : (
+            <Outlet />
+          )}
         </main>
       </div>
     </div>

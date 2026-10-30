@@ -1,12 +1,12 @@
-import { createContext, useContext, useEffect, useReducer, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useReducer, useState, type ReactNode } from 'react'
 import type { Activity, AppData, Project, Task, TaskStatus } from '../types'
 import { createMockData } from '../data/mockData'
+import { loadFromAzureDevOps } from '../data/azureDevOps'
 import { isoFromToday } from '../lib/dates'
 import { STATUS_LABEL } from '../lib/meta'
 
 const STORAGE_KEY = 'strandvad-pm:v1'
-/** The prototype has no auth; actions are attributed to this member. */
-export const CURRENT_USER_ID = 'm8'
+const ADO = __ADO_CONFIG__
 
 export type Action =
   | { type: 'task/create'; task: Omit<Task, 'id' | 'createdAt' | 'completedAt'> }
@@ -17,12 +17,13 @@ export type Action =
   | { type: 'project/update'; id: string; patch: Partial<Project> }
   | { type: 'milestone/toggle'; projectId: string; milestoneId: string }
   | { type: 'reset' }
+  | { type: 'load'; data: AppData }
 
 let counter = Date.now()
 const uid = (prefix: string) => `${prefix}${(counter++).toString(36)}`
 
 function log(state: AppData, projectId: string, text: string): Activity[] {
-  const entry: Activity = { id: uid('a'), at: new Date().toISOString(), actorId: CURRENT_USER_ID, projectId, text }
+  const entry: Activity = { id: uid('a'), at: new Date().toISOString(), actorId: state.currentUserId ?? '', projectId, text }
   return [entry, ...state.activity].slice(0, 50)
 }
 
@@ -88,6 +89,8 @@ function reducer(state: AppData, action: Action): AppData {
       }
     case 'reset':
       return createMockData()
+    case 'load':
+      return action.data
   }
 }
 
@@ -97,7 +100,7 @@ function withCompletion(next: Task, prev: Task): Task {
   return next
 }
 
-function load(): AppData {
+function loadLocal(): AppData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) return JSON.parse(raw) as AppData
@@ -107,20 +110,57 @@ function load(): AppData {
   return createMockData()
 }
 
-const StoreContext = createContext<{ state: AppData; dispatch: React.Dispatch<Action> } | null>(null)
+const EMPTY: AppData = { members: [], projects: [], tasks: [], activity: [] }
+
+export interface SyncState {
+  /** Where the data comes from: Azure DevOps (when configured) or local demo data. */
+  source: 'ado' | 'mock'
+  status: 'loading' | 'ready' | 'error'
+  error?: string
+  lastSync?: Date
+}
+
+interface StoreValue {
+  state: AppData
+  dispatch: React.Dispatch<Action>
+  sync: SyncState
+  refresh: () => void
+}
+
+const StoreContext = createContext<StoreValue | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, undefined, load)
+  const [state, dispatch] = useReducer(reducer, undefined, () => (ADO.enabled ? EMPTY : loadLocal()))
+  const [sync, setSync] = useState<SyncState>(ADO.enabled ? { source: 'ado', status: 'loading' } : { source: 'mock', status: 'ready' })
+
+  const refresh = useCallback(() => {
+    if (!ADO.enabled) return
+    setSync((s) => ({ ...s, source: 'ado', status: 'loading', error: undefined }))
+    loadFromAzureDevOps()
+      .then((data) => {
+        dispatch({ type: 'load', data })
+        setSync({ source: 'ado', status: 'ready', lastSync: new Date() })
+      })
+      .catch((e: Error) => {
+        // Keep the app usable: fall back to demo data and explain why.
+        dispatch({ type: 'load', data: loadLocal() })
+        setSync({ source: 'mock', status: 'error', error: e.message })
+      })
+  }, [])
+
+  useEffect(refresh, [refresh])
 
   useEffect(() => {
+    // Only demo data is persisted; Azure DevOps data is always re-fetched so it's never stale.
+    if (sync.source !== 'mock') return
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
     } catch {
       // storage full or blocked — state still works in memory
     }
-  }, [state])
+  }, [state, sync.source])
 
-  return <StoreContext.Provider value={{ state, dispatch }}>{children}</StoreContext.Provider>
+  return <StoreContext.Provider value={{ state, dispatch, sync, refresh }}>{children}</StoreContext.Provider>
 }
 
 export function useStore() {

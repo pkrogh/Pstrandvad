@@ -32,13 +32,43 @@ Planned hours come from open task estimates spread evenly across each task's sta
 
 Use **Reset demo data** in the sidebar to restore the original data set.
 
+## Connecting to Azure DevOps (read-only)
+
+The app can load real data from Azure DevOps instead of the demo data.
+
+1. Create a [personal access token](https://learn.microsoft.com/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate) with the scopes **Work Items (Read)** and **Project and Team (Read)**.
+2. Copy `.env.example` to `.env.local`. This file is git-ignored. Fill in `ADO_ORG`, `ADO_PROJECT` and `ADO_PAT`.
+3. Restart `npm run dev`. The sidebar shows "Azure DevOps · *project*", with a **Refresh** button.
+
+**How data is mapped**
+
+| App | Azure DevOps |
+| --- | --- |
+| Project | **Epic** (title, description, Assigned To = owner, Start/Target Date) |
+| Milestone | **Feature** under the epic (Target Date; done when Closed/Completed) |
+| Task | **Leaf work items** under the epic: Tasks, or Stories/PBIs/Bugs that have no child tasks, so effort isn't counted twice |
+| Status column | The state's *category*: Proposed → Backlog, or To do if in a sprint; In Progress → In progress; Resolved → Review; Completed → Done |
+| Estimate | Original Estimate → Remaining + Completed Work → Story Points/Effort/Size × `ADO_HOURS_PER_POINT` |
+| Dates | Start/Target/Due Date → sprint (iteration) dates → epic target date |
+| Priority | 1 Urgent · 2 High · 3 Medium · 4 Low |
+| People | Everyone assigned to work. Capacity = `ADO_DEFAULT_CAPACITY` h/week; team = most common Area Path |
+| Health | Derived from progress vs. time elapsed and overdue work. Azure DevOps has no health field. |
+
+Budgets aren't tracked in Azure DevOps, so the budget panels show "—" or are replaced by a milestone count.
+
+**Security:** the token stays in the Vite dev/preview server (`server/adoProxy.ts`), which adds it to requests sent to Azure DevOps. The browser never receives it, and it isn't part of the build output. The proxy only forwards same-origin requests to a short list of read-only endpoints, so other websites can't use it and it can't change anything. It only runs with `npm run dev` / `npm run preview`. A hosted deployment needs a small backend, such as an Azure Function, to hold the token instead.
+
+**Limitations of this first version:** sync is read-only. Edits in the app are kept only in the current tab and are lost on refresh. Sprint capacity from Azure DevOps team settings is not imported yet.
+
 ## Project structure
 
 ```
 src/
   types.ts              Domain model (Project, Task, Member, …)
   data/mockData.ts      Deterministic mock data generator
-  store/store.tsx       React context + reducer, persisted to localStorage
+  data/azureDevOps.ts   Azure DevOps loader (Epics → projects, Features → milestones, work items → tasks)
+  store/store.tsx       React context + reducer; demo data persisted to localStorage
+server/adoProxy.ts      Dev-server proxy that adds the Azure DevOps token server-side
   lib/                  Date helpers, analytics (progress, allocation), labels/colours
   components/           Layout, shared UI primitives, Task/Project dialogs
   pages/                Dashboard, Projects, ProjectDetail, Board, Resources

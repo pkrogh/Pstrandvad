@@ -293,5 +293,6 @@ export function createMockData(): AppData {
     projects: structuredClone(projects),
     tasks: buildTasks(),
     activity: structuredClone(activity),
+    currentUserId: 'm8',
   }
 }

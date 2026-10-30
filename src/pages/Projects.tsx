@@ -17,6 +17,7 @@ export function Projects() {
   const [query, setQuery] = useState('')
   const [creating, setCreating] = useState(false)
 
+  const totalBudget = state.projects.reduce((s, p) => s + p.budget, 0)
   const q = query.trim().toLowerCase()
   const visible = state.projects.filter(
     (p) => (filter === 'all' || p.status === filter) && (!q || `${p.name} ${p.client} ${p.key}`.toLowerCase().includes(q)),
@@ -26,7 +27,7 @@ export function Projects() {
     <>
       <PageHeader
         title="Projects"
-        subtitle={`${state.projects.length} projects · ${formatCurrency(state.projects.reduce((s, p) => s + p.budget, 0))} total budget`}
+        subtitle={`${state.projects.length} projects` + (totalBudget ? ` · ${formatCurrency(totalBudget)} total budget` : '')}
         actions={
           <Button onClick={() => setCreating(true)}>
             <Plus size={16} /> New project
@@ -69,7 +70,7 @@ export function Projects() {
             const open = pt.filter((t) => t.status !== 'done').length
             const late = pt.filter(isOverdue).length
             const team = state.members.filter((m) => p.memberIds.includes(m.id) || m.id === p.ownerId)
-            const burn = Math.round((p.spent / p.budget) * 100)
+            const burn = p.budget ? Math.round((p.spent / p.budget) * 100) : null
             return (
               <Link key={p.id} to={`/projects/${p.id}`} className="group min-w-0">
                 <Card className="flex h-full flex-col p-5 transition group-hover:border-indigo-200 group-hover:shadow-md">
@@ -103,7 +104,7 @@ export function Projects() {
                     </div>
                     <div>
                       <dt className="text-slate-400">Budget used</dt>
-                      <dd className={cx('font-medium', burn > 100 ? 'text-red-600' : 'text-slate-700')}>{burn}%</dd>
+                      <dd className={cx('font-medium', burn !== null && burn > 100 ? 'text-red-600' : 'text-slate-700')}>{burn === null ? '—' : `${burn}%`}</dd>
                     </div>
                     <div>
                       <dt className="text-slate-400">Team</dt>

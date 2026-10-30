@@ -143,6 +143,15 @@ export function TaskDialog({ task, defaults, onClose }: Props) {
           <p className="text-xs text-slate-400">
             Created {formatDate(task.createdAt, { month: 'short', day: 'numeric', year: 'numeric' })}
             {task.completedAt && ` · Completed ${formatDate(task.completedAt)}`}
+            {task.sourceType && ` · ${task.sourceType} · ${task.sourceState}`}
+            {task.url && (
+              <>
+                {' · '}
+                <a href={task.url} target="_blank" rel="noreferrer" className="font-medium text-indigo-600 hover:underline">
+                  Open #{task.id} in Azure DevOps
+                </a>
+              </>
+            )}
           </p>
         )}
         <div className="flex items-center justify-between border-t border-slate-100 pt-4">

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Check, Pencil, Plus, SquareKanban } from 'lucide-react'
+import { ArrowLeft, Check, ExternalLink, Pencil, Plus, SquareKanban } from 'lucide-react'
 import { useStore } from '../store/store'
 import type { ProjectHealth, ProjectStatus, Task, TaskStatus } from '../types'
 import { HEALTH_META, PRIORITY_META, PROJECT_STATUS_META, STATUS_COLOR, STATUS_LABEL, TASK_STATUSES, formatCurrency } from '../lib/meta'
@@ -33,7 +33,7 @@ export function ProjectDetail() {
   const progress = projectProgress(tasks)
   const elapsed = timeElapsed(project)
   const daysLeft = daysUntil(project.dueDate)
-  const burn = Math.round((project.spent / project.budget) * 100)
+  const burn = project.budget ? Math.round((project.spent / project.budget) * 100) : null
   const owner = state.members.find((m) => m.id === project.ownerId)
   const team = state.members.filter((m) => project.memberIds.includes(m.id) || m.id === project.ownerId)
   const memberById = (mid: string | null) => state.members.find((m) => m.id === mid)
@@ -92,6 +92,13 @@ export function ProjectDetail() {
                 </option>
               ))}
             </select>
+            {project.url && (
+              <a href={project.url} target="_blank" rel="noreferrer">
+                <Button variant="secondary">
+                  <ExternalLink size={14} /> Azure DevOps
+                </Button>
+              </a>
+            )}
             <Button variant="secondary" onClick={() => setEditingProject(true)}>
               <Pencil size={14} /> Edit
             </Button>
@@ -119,9 +126,13 @@ export function ProjectDetail() {
           sub={`${formatDate(project.startDate)} – ${formatDate(project.dueDate, { month: 'short', day: 'numeric', year: 'numeric' })}`}
           tone={daysLeft < 0 && project.status !== 'completed' ? 'bad' : undefined}
         />
-        <Stat label="Budget" value={`${burn}% used`} sub={`${formatCurrency(project.spent)} of ${formatCurrency(project.budget)}`} tone={burn > 100 ? 'bad' : burn > progress + 15 ? 'warn' : undefined}>
-          <ProgressBar value={burn} color={burn > 100 ? '#dc2626' : '#64748b'} />
-        </Stat>
+        {burn === null ? (
+          <Stat label="Milestones" value={`${project.milestones.filter((m) => m.done).length} / ${project.milestones.length} done`} sub={project.milestones.length ? 'Features in this epic' : 'No features yet'} />
+        ) : (
+          <Stat label="Budget" value={`${burn}% used`} sub={`${formatCurrency(project.spent)} of ${formatCurrency(project.budget)}`} tone={burn > 100 ? 'bad' : burn > progress + 15 ? 'warn' : undefined}>
+            <ProgressBar value={burn} color={burn > 100 ? '#dc2626' : '#64748b'} />
+          </Stat>
+        )}
         <Stat label="Open tasks" value={String(tasks.length - counts[4].count)} sub={overdue ? `${overdue} overdue` : 'None overdue'} tone={overdue ? 'bad' : undefined} />
       </div>
 

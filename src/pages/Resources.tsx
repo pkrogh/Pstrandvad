@@ -76,7 +76,7 @@ export function Resources() {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Summary label="Capacity" value={`${Math.round(totalCap)}h`} sub={`${members.length} people × ${weeks.length} weeks`} />
-        <Summary label="Planned" value={`${Math.round(totalAlloc)}h`} sub={`${Math.round((totalAlloc / totalCap) * 100)}% average utilization`} />
+        <Summary label="Planned" value={`${Math.round(totalAlloc)}h`} sub={`${totalCap ? Math.round((totalAlloc / totalCap) * 100) : 0}% average utilization`} />
         <Summary
           label="Over-allocated"
           value={`${overloadedPeople} people`}
@@ -183,7 +183,7 @@ export function Resources() {
                 </th>
                 {weekTotals.map((h, i) => (
                   <td key={i} className="py-2 text-center tabular-nums">
-                    <div className="font-semibold text-slate-700">{Math.round((h / weekCaps) * 100)}%</div>
+                    <div className="font-semibold text-slate-700">{weekCaps ? Math.round((h / weekCaps) * 100) : 0}%</div>
                     <div className="text-[10px]">{Math.round(h)}h</div>
                   </td>
                 ))}

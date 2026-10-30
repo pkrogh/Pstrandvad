@@ -220,7 +220,7 @@ export function Board() {
                         task: {
                           title,
                           status,
-                          projectId: projectFilter || projectOptions.find((p) => p.status === 'active')?.id || state.projects[0].id,
+                          projectId: projectFilter || projectOptions.find((p) => p.status === 'active')?.id || state.projects[0]?.id || '',
                           assigneeId: assigneeFilter && assigneeFilter !== 'none' ? assigneeFilter : null,
                           priority: priorityFilter || 'medium',
                           description: '',

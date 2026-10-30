@@ -8,7 +8,8 @@ export function projectTasks(tasks: Task[], projectId: string) {
 /** Progress weighted by estimated effort. */
 export function projectProgress(tasks: Task[]): number {
   const total = tasks.reduce((s, t) => s + t.estimate, 0)
-  if (!total) return 0
+  // Without estimates (common for imported work items), fall back to task count.
+  if (!total) return tasks.length ? Math.round((tasks.filter((t) => t.status === 'done').length / tasks.length) * 100) : 0
   const done = tasks.filter((t) => t.status === 'done').reduce((s, t) => s + t.estimate, 0)
   return Math.round((done / total) * 100)
 }

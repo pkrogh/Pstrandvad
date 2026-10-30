@@ -36,6 +36,8 @@ export interface Project {
   spent: number
   color: string
   milestones: Milestone[]
+  /** Link to the source item (e.g. the Azure DevOps epic) */
+  url?: string
 }
 
 export interface Task {
@@ -53,6 +55,11 @@ export interface Task {
   tags: string[]
   createdAt: string
   completedAt: string | null
+  /** Link to the source item (e.g. the Azure DevOps work item) */
+  url?: string
+  /** Original work item type / state, when loaded from Azure DevOps */
+  sourceType?: string
+  sourceState?: string
 }
 
 export interface Activity {
@@ -61,6 +68,8 @@ export interface Activity {
   actorId: string
   projectId: string
   text: string
+  /** Display name when the actor is not a team member */
+  actorName?: string
 }
 
 export interface AppData {
@@ -68,4 +77,6 @@ export interface AppData {
   projects: Project[]
   tasks: Task[]
   activity: Activity[]
+  /** Member the app treats as "me" */
+  currentUserId?: string
 }

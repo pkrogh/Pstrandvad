@@ -27,13 +27,14 @@ export function Dashboard() {
     .sort((a, b) => b.hours / b.member.capacity - a.hours / a.member.capacity)
   const totalHours = load.reduce((s, l) => s + l.hours, 0)
   const totalCapacity = members.reduce((s, m) => s + m.capacity, 0)
-  const utilization = Math.round((totalHours / totalCapacity) * 100)
+  const utilization = totalCapacity ? Math.round((totalHours / totalCapacity) * 100) : 0
   const overloaded = load.filter((l) => l.hours > l.member.capacity).length
 
   const throughput = completedPerWeek(tasks, 8)
   const maxThroughput = Math.max(1, ...throughput.map((w) => w.count))
 
   const memberById = (id: string | null) => members.find((m) => m.id === id)
+  const me = memberById(state.currentUserId ?? null)
   const projectById = (id: string) => projects.find((p) => p.id === id)
 
   const greeting = new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 18 ? 'Good afternoon' : 'Good evening'
@@ -41,7 +42,7 @@ export function Dashboard() {
   return (
     <>
       <PageHeader
-        title={`${greeting}, Clara`}
+        title={me ? `${greeting}, ${me.name.split(' ')[0]}` : greeting}
         subtitle={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) + ' · Here’s what’s happening across your portfolio.'}
       />
 
@@ -205,7 +206,7 @@ export function Dashboard() {
                   <Avatar member={memberById(a.actorId)} size="sm" />
                   <div className="min-w-0 text-sm">
                     <p className="text-slate-700">
-                      <span className="font-medium text-slate-900">{memberById(a.actorId)?.name.split(' ')[0]}</span> {a.text}
+                      <span className="font-medium text-slate-900">{memberById(a.actorId)?.name.split(' ')[0] ?? a.actorName}</span> {a.text}
                     </p>
                     <p className="mt-0.5 text-xs text-slate-400">
                       {p?.name ?? 'Deleted project'} · {timeAgo(a.at)}
