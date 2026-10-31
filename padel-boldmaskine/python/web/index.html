@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <title>Padel Boldmaskine</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Padel Boldmaskine</h1>
+    <span id="conn" class="pill">Forbinder…</span>
+  </header>
+
+  <main>
+    <button id="estop" class="estop" data-cmd="estop">NØDSTOP</button>
+
+    <section class="card">
+      <h2>Status</h2>
+      <dl class="status">
+        <div><dt>Tilstand</dt><dd id="st-state">–</dd></div>
+        <div><dt>Vinkel</dt><dd id="st-angle">–</dd></div>
+        <div><dt>Venstre hjul</dt><dd id="st-left">–</dd></div>
+        <div><dt>Højre hjul</dt><dd id="st-right">–</dd></div>
+        <div><dt>Fejl</dt><dd id="st-fault">–</dd></div>
+      </dl>
+      <div class="row">
+        <button data-cmd="home">Kalibrér (home)</button>
+        <button data-cmd="reset">Nulstil fejl</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Manuel styring</h2>
+      <label>Hastighed (begge hjul) <output id="out-speed">150</output>
+        <input id="speed" type="range" min="0" max="255" value="150">
+      </label>
+      <label>Spin (højre − venstre) <output id="out-spin">0</output>
+        <input id="spin" type="range" min="-60" max="60" value="0">
+      </label>
+      <label>Vinkel (grader) <output id="out-angle">20</output>
+        <input id="angle" type="range" min="0" max="60" step="0.5" value="20">
+      </label>
+      <div class="row">
+        <button class="primary" data-cmd="start">Start hjul</button>
+        <button class="fire" data-cmd="fire">Affyr</button>
+        <button data-cmd="stop">Stop</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Træningsprogrammer</h2>
+      <div id="drill-status" class="muted">Intet program kører.</div>
+      <ul id="presets" class="presets"></ul>
+      <details>
+        <summary>Gem nuværende indstilling som eget program</summary>
+        <form id="save-form">
+          <label>Navn <input id="preset-name" required maxlength="40" placeholder="Custom"></label>
+          <label>Antal bolde <input id="preset-count" type="number" min="1" max="200" value="10"></label>
+          <label>Pause mellem bolde (s) <input id="preset-pause" type="number" min="1" max="30" step="0.5" value="4"></label>
+          <button class="primary" type="submit">Gem program</button>
+        </form>
+      </details>
+    </section>
+
+    <p id="toast" class="toast" role="status" aria-live="polite"></p>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

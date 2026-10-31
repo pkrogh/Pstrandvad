@@ -1,0 +1,3 @@
+# Linux-delen bruger kun Python's standardbibliotek.
+# Kun nødvendig ved --serial (USB-forbindelse til MCU'en):
+pyserial>=3.5

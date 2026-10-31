@@ -1,0 +1,4 @@
+tests/firmware/test_firmware
+python/data/
+__pycache__/
+*.pyc

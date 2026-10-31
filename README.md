@@ -1,5 +1,7 @@
 # Strandvad PM
 
+> This repository also contains **[padel-boldmaskine/](padel-boldmaskine/README.md)**, a separate project with firmware and Linux software for a padel ball machine on Arduino Uno Q.
+
 A functional prototype of a modern project management app, built with **React 19, TypeScript, Vite and Tailwind CSS v4**.
 There's no backend or authentication. All data is realistic mock data, generated relative to today's date and saved in your browser's `localStorage`.
 

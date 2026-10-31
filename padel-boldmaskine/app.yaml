@@ -1,0 +1,7 @@
+# Arduino App Lab-manifest for Uno Q.
+# VERIFICÉR felterne mod den aktuelle App Lab-dokumentation.
+name: Padel Boldmaskine
+description: Styring af padel-boldmaskine – realtid på MCU, web-UI og træningsprogrammer på Linux.
+icon: 🎾
+ports:
+  - 8080
